@@ -27,11 +27,13 @@ type migrator struct {
 }
 
 func NewMigrator(dialect dbDialect, db *sql.DB, directory string) *migrator {
-	return &migrator{
+	m := &migrator{
 		dialect:   dialect,
 		db:        db,
 		directory: directory,
 	}
+	m.prepare()
+	return m
 }
 
 type state string
@@ -58,11 +60,15 @@ func (m *migrator) getExecutedMigrations() map[string]bool {
 	return executed
 }
 
-func (m *migrator) Up() {
+func (m *migrator) prepare() {
 	_, err := m.db.Exec(m.dialect.createVersionTableSql())
 	if err != nil {
 		log.Fatalf("Can't create version table: %s", err)
 	}
+
+}
+
+func (m *migrator) Up() {
 	//Collect not executed migrations
 	executedMigration := m.getExecutedMigrations()
 	var files []string
@@ -81,10 +87,8 @@ func (m *migrator) Up() {
 	}
 }
 
-func (m *migrator) UpSingle(filePath string) {
-	name := strings.Split(filePath, "/")[1]
-	log.Printf("Try up migration %s", name)
-
+func (m *migrator) UpSingle(name string) {
+	filePath := m.directory + "/" + name
 	migrationCommands := getCommandsByFile(filePath)[Up]
 
 	transaction, err := m.db.Begin()
@@ -112,18 +116,6 @@ func (m *migrator) UpSingle(filePath string) {
 		log.Fatalf("Can't commit up migration changes: %s", err)
 	}
 	fmt.Println("Migration ", name, " successful added.")
-}
-
-func (m *migrator) Down(count int) {
-	//Collect executed migrations
-	executedMigration := m.getExecutedMigrations()
-
-	for mig := range executedMigration {
-		if count > 0 {
-			m.DownSingle(mig)
-			count--
-		}
-	}
 }
 
 func (m *migrator) DownSingle(fileName string) {

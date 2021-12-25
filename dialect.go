@@ -52,7 +52,6 @@ type SQLiteDialect struct {
 	dialect
 }
 
-
 func (db SQLiteDialect) createVersionTableSql() string {
 	return fmt.Sprintf(CreateVersionTableTmpl, "AUTOINCREMENT")
 }
@@ -60,7 +59,6 @@ func (db SQLiteDialect) createVersionTableSql() string {
 type MsSqlDialect struct {
 	dialect
 }
-
 
 func (db MsSqlDialect) createVersionTableSql() string {
 	return fmt.Sprintf(CreateVersionTableTmpl, "AUTOINCREMENT")
